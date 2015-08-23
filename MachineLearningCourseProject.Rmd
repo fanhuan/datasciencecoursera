@@ -1,0 +1,84 @@
+Machine Learning - Course Project
+========================================================
+Load the data
+
+```{r}
+setwd('~/R/MachineLearning')
+pml.training <- read.csv("pml-training.csv")
+```
+
+Split the train file into training and testing based on classe
+
+```{r}
+library(caret)
+library(doParallel)
+registerDoParallel(cores=20)
+inTrain<-createDataPartition(y=pml.training$classe,
+                             p=0.75,list=FALSE)
+training<-pml.training[inTrain,]
+testing<-pml.training[-inTrain,]
+#get rid of the other bookkeeping columns such as user name and timestamps.
+training<-training[,6:160]
+testing<-testing[,6:160]
+summary(training$classe)
+summary(testing$classe)
+```
+
+Jeff said that random forest and boosting are the two best practices in town and I'm more familiar with the first.
+
+```{r}
+modFit1<-train(classe~.,data=training,method='rf',prox=TRUE)
+#Check the importance of the variables
+varImp(modFit1)
+```
+
+Now the important variables seems more reasonable. Let's take a quick look at the first one with 100% accuracy, min_roll_forearm.
+
+```{r}
+summary(training$min_roll_forearm)
+```
+
+What the hell? Most of them are NA's? The same with the second variable: var_total_accel_belt. Then I realize there are some summary variables for each window (new_window=='yes'). Since number of windows are too few (406) and information was lost during those summarizing calculation, here I only include the original descriptive variables in my analysis.
+
+```{r}
+new.training<-pml.training[pml.training$new_window=='no',]
+# remove bookkeeping columns including new_window and num_window 
+new.training<-new.training[,8:160]
+# Get rid of those summarizing variables
+sum_term<-c('kurtosis_','skewness_','max_','min_','amplitude_','var_','avg_','stddev_')
+for (name in sum_term) {
+    new.training<-new.training[,-grep(name,names(new.training))]
+}
+# Split data into training and testing
+inTrain<-createDataPartition(y=new.training$classe,
+                             p=0.75,list=FALSE)
+training<-new.training[inTrain,]
+testing<-new.training[-inTrain,]
+summary(training$classe)
+summary(testing$classe)
+#Random forest again
+modFit2<-train(classe~.,data=training,method='rf',prox=TRUE)
+#Check the importance of the variables
+varImp(modFit2)
+```
+
+Seems like roll_belt is a good indicator. Let's take a direct look at it.
+```{r}
+plot(training$classe, training$roll_belt)
+```
+
+There is a big difference between the mean of roll_belt in A and the rest of the classe. It looks like a good indicator.
+
+Let's take a look at how it works on the testing dataset splitted from the training dataset.
+
+```{r}
+pred<-predict(modFit2,testing)
+confusionMatrix(pred,testing$classe)
+```
+
+Looks good. Now predict the classe for the test dataset.
+
+```{r}
+pml.testing <- read.csv("pml-testing.csv")
+predict(modFit2,pml.testing)
+```
