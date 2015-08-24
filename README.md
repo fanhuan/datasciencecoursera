@@ -1,2 +1,2 @@
 # datasciencecoursera
-Course Project for the data scientists' toolbox
+Course Project for the data scientists signature track
