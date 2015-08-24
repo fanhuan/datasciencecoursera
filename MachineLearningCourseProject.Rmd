@@ -32,13 +32,13 @@ modFit1<-train(classe~.,data=training,method='rf',prox=TRUE)
 varImp(modFit1)
 ```
 
-Now the important variables seems more reasonable. Let's take a quick look at the first one with 100% accuracy, min_roll_forearm.
+Now the important variables seems more reasonable. Let's take a quick look at the first one with 100% accuracy, stddev_roll_belt.
 
 ```{r}
-summary(training$min_roll_forearm)
+summary(training$stddev_roll_belt)
 ```
 
-What the hell? Most of them are NA's? The same with the second variable: var_total_accel_belt. Then I realize there are some summary variables for each window (new_window=='yes'). Since number of windows are too few (406) and information was lost during those summarizing calculation, here I only include the original descriptive variables in my analysis.
+What the hell? Most of them are NA's? The same with the second variable: var_roll_belt. Then I realize there are some summary variables for each window (new_window=='yes'). Since number of windows are too few (406) and information was lost during those summarizing calculation, here I only include the original descriptive variables in my analysis.
 
 ```{r}
 new.training<-pml.training[pml.training$new_window=='no',]
